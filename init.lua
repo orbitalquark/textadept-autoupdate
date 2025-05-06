@@ -69,6 +69,13 @@ function M.check()
 		ui.statusbar_text = string.format('%s (%s)', _L['Update detected'], version)
 		buffer:copy_text(release.html_url)
 
+		-- Output release notes.
+		buffer.new()
+		buffer:append_text(release.body)
+		buffer:set_save_point()
+		buffer:set_lexer('markdown')
+
+		-- Show notification.
 		ui.dialogs.message{
 			title = _L['Update Available'], text = table.concat({
 				_L['New version'] .. ': ' .. version, --
