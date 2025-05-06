@@ -50,6 +50,8 @@ function M.check()
 	local releases = json.decode(p:read('a'))
 
 	local current_version = _RELEASE:match('%d.+$')
+	local check_time = current_version:find('nightly') and
+		lfs.attributes(_HOME .. '/core/init.lua', 'modification')
 	local stable = not current_version:find('%s') -- space means alpha, beta, or nightly
 
 	for _, release in ipairs(releases) do
@@ -57,6 +59,13 @@ function M.check()
 		if release.prerelease and stable then goto continue end -- ignore unstable releases
 		local version = release.name:gsub('_', ' ')
 		if version == current_version then break end -- no new version
+		if check_time then
+			-- The current version is a nightly, so compare the modification time of core/init.lua with
+			-- the release's time.
+			local year, month, day = release.published_at:match('^(%d+)%-(%d+)%-(%d+)')
+			local release_time = os.time{year = year, month = month, day = day}
+			if release_time < check_time then return end -- no new version
+		end
 		ui.statusbar_text = string.format('%s (%s)', _L['Update detected'], version)
 		buffer:copy_text(release.html_url)
 

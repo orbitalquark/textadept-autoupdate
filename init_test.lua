@@ -16,9 +16,15 @@ local function mock_spawn(beta, stable)
 		return {
 			read = function()
 				return json.encode{
-					{name = nightly_name, prerelease = true, html_url = nightly_url},
-					{name = beta:gsub(' ', '_'), prerelease = true, html_url = beta_url}, --
-					{name = stable, html_url = stable_url}
+					{
+						name = nightly_name, prerelease = true, html_url = nightly_url,
+						published_at = os.date('%F'), body = 'notes'
+					}, --
+					{
+						name = beta:gsub(' ', '_'), prerelease = true, html_url = beta_url,
+						published_at = os.date('%F'), body = 'notes'
+					}, --
+					{name = stable, html_url = stable_url, published_at = os.date('%F'), body = 'notes'}
 				}
 			end
 		}
@@ -85,6 +91,35 @@ test('autoupdate.check should not show stable -> beta update', function()
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
 	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+
+	local update_found = autoupdate.check()
+
+	test.assert(not update_found, 'update should not have been found')
+	test.assert_equal(message.called, false)
+end)
+
+test('autoupdate.check should show update for nightly -> any new release', function()
+	local current, next_beta, current_stable = '1.1 nightly', '1.1 beta', '1.0'
+	local _<close> = test.mock(_G, '_RELEASE', current)
+	local message = test.stub()
+	local _<close> = test.mock(ui.dialogs, 'message', message)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+	local _<close> = test.mock(lfs, 'attributes', test.stub(0))
+
+	autoupdate.check()
+
+	test.assert_equal(message.called, true)
+	test.assert_contains(message.args[1].text, next_beta)
+end)
+
+test('autoupdate.check should not show update for nightly -> prior release', function()
+	local current, next_beta, current_stable = '1.1 nightly', '1.1 beta', '1.0'
+	local _<close> = test.mock(_G, '_RELEASE', current)
+	local message = test.stub()
+	local _<close> = test.mock(ui.dialogs, 'message', message)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+	local current_version_time = os.time() + 86400 -- this nightly is ahead of any prior release
+	local _<close> = test.mock(lfs, 'attributes', test.stub(current_version_time))
 
 	local update_found = autoupdate.check()
 
