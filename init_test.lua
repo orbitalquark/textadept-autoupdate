@@ -1,0 +1,93 @@
+-- Copyright 2025 Mitchell. See LICENSE.
+
+local autoupdate = require('autoupdate')
+local json = require('autoupdate.dkjson')
+
+local nightly_name, nightly_url = 'nightly', 'https://nightly'
+local beta_url = 'https://beta'
+local stable_url = 'https://stable'
+
+--- Mocks a GitHub REST response that returns 3 releases: a nightly, a beta, and a stable.
+-- @param beta String beta version.
+-- @param stable String stable version.
+-- @usage local _<close> = test.mock(os, 'spawn', mock_spawn('2.0 beta', '1.1')) -- current is 1.0
+local function mock_spawn(beta, stable)
+	return function()
+		return {
+			read = function()
+				return json.encode{
+					{name = nightly_name, prerelease = true, html_url = nightly_url},
+					{name = beta:gsub(' ', '_'), prerelease = true, html_url = beta_url}, --
+					{name = stable, html_url = stable_url}
+				}
+			end
+		}
+	end
+end
+
+test('autoupdate.check show show stable -> stable update', function()
+	local current, next_beta, next_stable = '1.0', '2.0 beta', '1.1'
+	local _<close> = test.mock(_G, '_RELEASE', 'Textadept ' .. current)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+	local message = test.stub()
+	local _<close> = test.mock(ui.dialogs, 'message', message)
+
+	local update_found = autoupdate.check()
+
+	test.assert_equal(update_found, true)
+	test.assert_equal(message.called, true)
+	test.assert_contains(message.args[1].text, next_stable)
+	test.assert_contains(message.args[1].text, current)
+	test.assert_contains(message.args[1].text, stable_url)
+end)
+
+test('autoupdate.check should copy release URL to clipboard', function()
+	local current, next_beta, next_stable = '1.0', '2.0 beta', '1.1'
+	local _<close> = test.mock(_G, '_RELEASE', 'Textadept ' .. current)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+	local _<close> = test.mock(ui.dialogs, 'message', test.stub())
+
+	autoupdate.check()
+
+	test.assert_equal(ui.get_clipboard_text(), stable_url)
+end)
+
+test('autoupdate.check should show beta -> beta update', function()
+	local current, next_beta, next_stable = '1.1 beta', '1.1 beta 2', '1.0'
+	local _<close> = test.mock(_G, '_RELEASE', current)
+	local message = test.stub()
+	local _<close> = test.mock(ui.dialogs, 'message', message)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+
+	autoupdate.check()
+
+	test.assert_equal(message.called, true)
+	test.assert_contains(message.args[1].text, next_beta)
+	test.assert_contains(message.args[1].text, beta_url)
+end)
+
+test('autoupdate.check should show beta -> stable update', function()
+	local current, next_beta, next_stable = '1.1 beta', '1.2 beta', '1.1'
+	local _<close> = test.mock(_G, '_RELEASE', current)
+	local message = test.stub()
+	local _<close> = test.mock(ui.dialogs, 'message', message)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+
+	autoupdate.check()
+
+	test.assert_equal(message.called, true)
+	test.assert_contains(message.args[1].text, next_stable)
+end)
+
+test('autoupdate.check should not show stable -> beta update', function()
+	local current, next_beta, current_stable = '1.0', '1.1 beta', '1.0'
+	local _<close> = test.mock(_G, '_RELEASE', current)
+	local message = test.stub()
+	local _<close> = test.mock(ui.dialogs, 'message', message)
+	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+
+	local update_found = autoupdate.check()
+
+	test.assert(not update_found, 'update should not have been found')
+	test.assert_equal(message.called, false)
+end)
