@@ -7,6 +7,9 @@ local nightly_name, nightly_url = 'nightly', 'https://nightly'
 local beta_url = 'https://beta'
 local stable_url = 'https://stable'
 
+--- Conditional for `test.mock(os, 'spawn')` if autoupdate is requesting release information.
+local function is_request(cmd) return cmd:sub(1, #autoupdate.fetch) == autoupdate.fetch end
+
 --- Mocks a GitHub REST response that returns 3 releases: a nightly, a beta, and a stable.
 -- @param beta String beta version.
 -- @param stable String stable version.
@@ -18,13 +21,13 @@ local function mock_spawn(beta, stable)
 				return json.encode{
 					{
 						name = nightly_name, prerelease = true, html_url = nightly_url,
-						published_at = os.date('%F'), body = 'notes'
+						published_at = os.date('%Y-%m-%d'), body = 'notes'
 					}, --
 					{
 						name = beta:gsub(' ', '_'), prerelease = true, html_url = beta_url,
-						published_at = os.date('%F'), body = 'notes'
+						published_at = os.date('%Y-%m-%d'), body = 'notes'
 					}, --
-					{name = stable, html_url = stable_url, published_at = os.date('%F'), body = 'notes'}
+					{name = stable, html_url = stable_url, published_at = os.date('%Y-%m-%d'), body = 'notes'}
 				}
 			end
 		}
@@ -34,7 +37,7 @@ end
 test('autoupdate.check show show stable -> stable update', function()
 	local current, next_beta, next_stable = '1.0', '2.0 beta', '1.1'
 	local _<close> = test.mock(_G, '_RELEASE', 'Textadept ' .. current)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
 
@@ -53,7 +56,7 @@ end)
 test('autoupdate.check should copy release URL to clipboard', function()
 	local current, next_beta, next_stable = '1.0', '2.0 beta', '1.1'
 	local _<close> = test.mock(_G, '_RELEASE', 'Textadept ' .. current)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
 	local _<close> = test.mock(ui.dialogs, 'message', test.stub())
 
 	autoupdate.check()
@@ -66,7 +69,7 @@ test('autoupdate.check should show beta -> beta update', function()
 	local _<close> = test.mock(_G, '_RELEASE', current)
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
 
 	autoupdate.check()
 
@@ -80,7 +83,7 @@ test('autoupdate.check should show beta -> stable update', function()
 	local _<close> = test.mock(_G, '_RELEASE', current)
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, next_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
 
 	autoupdate.check()
 
@@ -93,7 +96,7 @@ test('autoupdate.check should not show stable -> beta update', function()
 	local _<close> = test.mock(_G, '_RELEASE', current)
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, current_stable))
 
 	local update_found = autoupdate.check()
 
@@ -106,7 +109,7 @@ test('autoupdate.check should show update for nightly -> any new release', funct
 	local _<close> = test.mock(_G, '_RELEASE', current)
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, current_stable))
 	local _<close> = test.mock(lfs, 'attributes', test.stub(0))
 
 	autoupdate.check()
@@ -120,7 +123,7 @@ test('autoupdate.check should not show update for nightly -> prior release', fun
 	local _<close> = test.mock(_G, '_RELEASE', current)
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
-	local _<close> = test.mock(os, 'spawn', mock_spawn(next_beta, current_stable))
+	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, current_stable))
 	local current_version_time = os.time() + 86400 -- this nightly is ahead of any prior release
 	local _<close> = test.mock(lfs, 'attributes', test.stub(current_version_time))
 
