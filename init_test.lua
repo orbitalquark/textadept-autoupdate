@@ -57,7 +57,8 @@ test('autoupdate.check should copy release URL to clipboard if selected', functi
 	local current, next_beta, next_stable = '1.0', '2.0 beta', '1.1'
 	local _<close> = test.mock(_G, '_RELEASE', 'Textadept ' .. current)
 	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
-	local _<close> = test.mock(ui.dialogs, 'message', test.stub(3))
+	local click_copy = test.stub(3)
+	local _<close> = test.mock(ui.dialogs, 'message', click_copy)
 
 	autoupdate.check()
 
