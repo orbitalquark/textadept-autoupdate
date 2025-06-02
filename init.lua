@@ -80,29 +80,27 @@ function M.check()
 		buffer:set_lexer('markdown')
 
 		-- Show notification.
-        if M.copy_link then
-            ui.dialogs.message{
-                title = _L['Update Available'], text = table.concat({
-                    _L['New version'] .. ': ' .. version, --
-                    _L['Current version'] .. ': ' .. current_version, --
-                    '', -- blank line
-                    release.html_url, --
-                    '', -- blank line
-                    _L['This link has been copied to your clipboard']
-                }, '\n')
-            }
-        
-        else
-            ui.dialogs.message{
-                title = _L['Update Available'], text = table.concat({
-                    _L['New version'] .. ': ' .. version, --
-                    _L['Current version'] .. ': ' .. current_version, --
-                    '', -- blank line
-                    release.html_url, --
-                }, '\n')
-            }
-        
-        end
+        	if M.copy_link then
+	            ui.dialogs.message{
+                	title = _L['Update Available'], text = table.concat({
+                    	_L['New version'] .. ': ' .. version, --
+                    	_L['Current version'] .. ': ' .. current_version, --
+	                    '', -- blank line
+                   	 release.html_url, --
+                   	 '', -- blank line
+                   	 _L['This link has been copied to your clipboard']
+                	}, '\n')
+            	}
+        	else
+            	ui.dialogs.message{
+                	title = _L['Update Available'], text = table.concat({
+                    	_L['New version'] .. ': ' .. version, --
+                    	_L['Current version'] .. ': ' .. current_version, --
+                    	'', -- blank line
+                    	release.html_url, --
+                	}, '\n')
+            	}
+	        end
 		do return true end
 		::continue::
 	end
