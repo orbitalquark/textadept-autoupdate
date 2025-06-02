@@ -26,19 +26,6 @@ M.fetch = not LINUX and 'curl -s' or 'wget -q -O-'
 
 local json = require('autoupdate.dkjson')
 
--- Localizations.
-local _L = _L
-if not rawget(_L, 'Check for Updates') then
-	_L['Check for Updates'] = '_Check for Updates'
-	_L['Checking for updates...'] = 'Checking for updates...'
-	_L['Update detected'] = 'Update detected'
-	_L['Update Available'] = 'Update Available'
-	_L['New version'] = 'New version'
-	_L['Current version'] = 'Current version'
-	_L['Copy link to clipboard'] = 'Copy link to clipboard'
-	_L['No update detected'] = 'No update detected'
-end
-
 --- Checks for updates, shows a message box if there is one, and copies the update URL to the
 -- clipboard so the user can download it.
 function M.check()
@@ -93,6 +80,8 @@ function M.check()
 end
 events.connect(events.INITIALIZED, function() if M.check_on_startup then M.check() end end)
 
+-- Add a menu entry.
+_L['Check for Updates'] = '_Check for Updates'
 local m_about = textadept.menu.menubar['Help']
 table.insert(m_about, #m_about - 1, {''}) -- separator
 table.insert(m_about, #m_about - 1, {_L['Check for Updates'], M.check})
