@@ -20,6 +20,10 @@ local M = {}
 -- The default value is `false`.
 M.check_on_startup = false
 
+-- Whether or not to copy the link to a new version to clipboard
+--  The default value is 'true'
+M.copy_link = true
+
 --- Command to send an HTTP request to check for updates.
 -- The default value uses 'curl' on Windows, macOS, and BSD; it uses 'wget' on Linux.
 M.fetch = not LINUX and 'curl -s' or 'wget -q -O-'
@@ -67,7 +71,7 @@ function M.check()
 			if release_time < check_time then return end -- no new version
 		end
 		ui.statusbar_text = string.format('%s (%s)', _L['Update detected'], version)
-		buffer:copy_text(release.html_url)
+		if M.copy_link then	buffer:copy_text(release.html_url) end
 
 		-- Output release notes.
 		buffer.new()
@@ -76,18 +80,30 @@ function M.check()
 		buffer:set_lexer('markdown')
 
 		-- Show notification.
-		ui.dialogs.message{
-			title = _L['Update Available'], text = table.concat({
-				_L['New version'] .. ': ' .. version, --
-				_L['Current version'] .. ': ' .. current_version, --
-				'', -- blank line
-				release.html_url, --
-				'', -- blank line
-				_L['This link has been copied to your clipboard']
-			}, '\n')
-		}
+        if M.copy_link then
+            ui.dialogs.message{
+                title = _L['Update Available'], text = table.concat({
+                    _L['New version'] .. ': ' .. version, --
+                    _L['Current version'] .. ': ' .. current_version, --
+                    '', -- blank line
+                    release.html_url, --
+                    '', -- blank line
+                    _L['This link has been copied to your clipboard']
+                }, '\n')
+            }
+        
+        else
+            ui.dialogs.message{
+                title = _L['Update Available'], text = table.concat({
+                    _L['New version'] .. ': ' .. version, --
+                    _L['Current version'] .. ': ' .. current_version, --
+                    '', -- blank line
+                    release.html_url, --
+                }, '\n')
+            }
+        
+        end
 		do return true end
-
 		::continue::
 	end
 
