@@ -35,7 +35,7 @@ if not rawget(_L, 'Check for Updates') then
 	_L['Update Available'] = 'Update Available'
 	_L['New version'] = 'New version'
 	_L['Current version'] = 'Current version'
-	_L['This link has been copied to your clipboard'] = 'This link has been copied to your clipboard'
+	_L['Copy link to clipboard'] = 'Copy link to clipboard'
 	_L['No update detected'] = 'No update detected'
 end
 
@@ -67,7 +67,6 @@ function M.check()
 			if release_time < check_time then return end -- no new version
 		end
 		ui.statusbar_text = string.format('%s (%s)', _L['Update detected'], version)
-		buffer:copy_text(release.html_url)
 
 		-- Output release notes.
 		buffer.new()
@@ -76,16 +75,15 @@ function M.check()
 		buffer:set_lexer('markdown')
 
 		-- Show notification.
-		ui.dialogs.message{
+		local button = ui.dialogs.message{
 			title = _L['Update Available'], text = table.concat({
 				_L['New version'] .. ': ' .. version, --
 				_L['Current version'] .. ': ' .. current_version, --
 				'', -- blank line
-				release.html_url, --
-				'', -- blank line
-				_L['This link has been copied to your clipboard']
-			}, '\n')
+				release.html_url --
+			}, '\n'), button2 = _L['Cancel'], button3 = _L['Copy link to clipboard']
 		}
+		if button == 3 then buffer:copy_text(release.html_url) end
 		do return true end
 
 		::continue::
