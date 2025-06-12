@@ -40,6 +40,7 @@ test('autoupdate.check show show stable -> stable update', function()
 	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
+	local _<close> = test.disable_metafield(ui, 'statusbar_text')
 
 	local update_found = autoupdate.check()
 
@@ -51,6 +52,7 @@ test('autoupdate.check show show stable -> stable update', function()
 	test.assert_equal(buffer:get_text(), 'notes')
 	test.assert_equal(buffer.modify, false)
 	test.assert_equal(buffer.lexer_language, 'markdown')
+	test.assert(ui.statusbar_text:find(_L['Update detected']))
 end)
 
 test('autoupdate.check should copy release URL to clipboard if selected', function()
@@ -98,11 +100,13 @@ test('autoupdate.check should not show stable -> beta update', function()
 	local message = test.stub()
 	local _<close> = test.mock(ui.dialogs, 'message', message)
 	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, current_stable))
+	local _<close> = test.disable_metafield(ui, 'statusbar_text')
 
 	local update_found = autoupdate.check()
 
 	test.assert(not update_found, 'update should not have been found')
 	test.assert_equal(message.called, false)
+	test.assert_equal(ui.statusbar_text, _L['No update detected'])
 end)
 
 test('autoupdate.check should show update for nightly -> any new release', function()
@@ -132,4 +136,14 @@ test('autoupdate.check should not show update for nightly -> prior release', fun
 
 	test.assert(not update_found, 'update should not have been found')
 	test.assert_equal(message.called, false)
+end)
+
+test('autoupdate.check should handle the lack of an internet connection', function()
+	local no_internet_connection = function() return {read = function() return '' end} end
+	local _<close> = test.mock(os, 'spawn', is_request, no_internet_connection)
+	local _<close> = test.disable_metafield(ui, 'statusbar_text')
+
+	autoupdate.check()
+
+	test.assert_equal(ui.statusbar_text, _L['Could not fetch update information'])
 end)

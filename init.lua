@@ -35,6 +35,10 @@ function M.check()
 	local p = assert(os.spawn(M.fetch ..
 		' https://api.github.com/repos/orbitalquark/textadept/releases'), 'unable to check for updates')
 	local releases = json.decode(p:read('a'))
+	if not releases then
+		ui.statusbar_text = _L['Could not fetch update information']
+		return
+	end
 
 	local current_version = _RELEASE:match('%d.+$')
 	local check_time = current_version:find('nightly') and
