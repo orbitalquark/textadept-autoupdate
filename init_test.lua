@@ -21,13 +21,16 @@ local function mock_spawn(beta, stable)
 				return json.encode{
 					{
 						name = nightly_name, prerelease = true, html_url = nightly_url,
-						published_at = os.date('%Y-%m-%d'), body = 'notes'
+						published_at = os.date('%Y-%m-%d'), assets = {}, body = 'notes'
 					}, --
 					{
 						name = beta:gsub(' ', '_'), prerelease = true, html_url = beta_url,
-						published_at = os.date('%Y-%m-%d'), body = 'notes'
+						published_at = os.date('%Y-%m-%d'), assets = {}, body = 'notes'
 					}, --
-					{name = stable, html_url = stable_url, published_at = os.date('%Y-%m-%d'), body = 'notes'}
+					{
+						name = stable, html_url = stable_url, published_at = os.date('%Y-%m-%d'), assets = {},
+						body = 'notes'
+					}
 				}
 			end
 		}
@@ -55,16 +58,19 @@ test('autoupdate.check show show stable -> stable update', function()
 	test.assert(ui.statusbar_text:find(_L['Update detected']))
 end)
 
-test('autoupdate.check should copy release URL to clipboard if selected', function()
+test('autoupdate.check should view release if selected', function()
 	local current, next_beta, next_stable = '1.0', '2.0 beta', '1.1'
 	local _<close> = test.mock(_G, '_RELEASE', 'Textadept ' .. current)
 	local _<close> = test.mock(os, 'spawn', is_request, mock_spawn(next_beta, next_stable))
-	local click_copy = test.stub(3)
+	local click_copy = test.stub(1)
 	local _<close> = test.mock(ui.dialogs, 'message', click_copy)
+	local open_in_browser = test.stub()
+	local is_open_in_browser = function(cmd) return cmd:find(autoupdate.browser) end
+	local _<close> = test.mock(os, 'spawn', is_open_in_browser, open_in_browser)
 
 	autoupdate.check()
 
-	test.assert_equal(ui.get_clipboard_text(), stable_url)
+	test.assert_equal(open_in_browser.called, true)
 end)
 
 test('autoupdate.check should show beta -> beta update', function()
