@@ -1,5 +1,9 @@
 # Autoupdate
 
+**Note:** this module is deprecated in favor of the [update notifier][] module.
+
+[update notifier]: https://github.com/orbitalquark/textadept-update-notifier
+
 Checks for application updates.
 
 Install this module by copying it into your *~/.textadept/modules/* directory or Textadept's
